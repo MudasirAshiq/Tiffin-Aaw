@@ -1,4 +1,4 @@
-import 'dotenv/config';
+// Vercel injects env vars automatically, no dotenv needed
 import express from 'express';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
