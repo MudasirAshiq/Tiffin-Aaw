@@ -11,8 +11,8 @@ import path from 'path';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
-import type { User, Order, OrderStatus, MenuItem, ChatMessage } from './src/types.ts';
-import { query, pool } from './src/lib/db.ts';
+import type { User, Order, OrderStatus, MenuItem, ChatMessage } from './src/types';
+import { query, pool } from './src/lib/db';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -751,8 +751,31 @@ async function startServer() {
   return app;
 }
 
-const appPromise = startServer();
+let appInstance: any = null;
+let startError: any = null;
+
+async function init() {
+  try {
+    appInstance = await startServer();
+  } catch (err) {
+    startError = err;
+    console.error("FAILED TO START SERVER:", err);
+  }
+}
+
+const initPromise = init();
+
 export default async (req: any, res: any) => {
-  const app = await appPromise;
-  app(req, res);
+  await initPromise;
+  if (startError) {
+    return res.status(500).json({
+      error: "Server Startup Failed",
+      message: startError.message || startError.toString(),
+      stack: startError.stack
+    });
+  }
+  if (appInstance) {
+    return appInstance(req, res);
+  }
+  return res.status(500).json({ error: "App instance is missing" });
 };
