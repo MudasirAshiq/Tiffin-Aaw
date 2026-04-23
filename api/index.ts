@@ -41,13 +41,13 @@ async function initDb() {
     if (parseInt(menuCheck.rows[0].count) === 0) {
       const items = [
         { id: '1', name: 'Homestyle Thali', description: '2 Roti, Rice, Dal, Sabzi, Curd and Salad.', price: 150, category: 'lunch', image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?q=80&w=800&auto=format&fit=crop' },
-        { id: '2', name: 'Deluxe Thali', description: 'Special Paneer, Mix Veg, Dal Makhani, 2 Paratha, Rice, Sweet.', price: 250, category: 'lunch', image: 'https://images.unsplash.com/photo-1626777552726-4a6b547b4de5?q=80&w=800&auto=format&fit=crop' },
+        { id: '2', name: 'Deluxe Thali', description: 'Special Paneer, Mix Veg, Dal Makhani, 2 Paratha, Rice, Sweet.', price: 250, category: 'lunch', image: 'https://images.unsplash.com/photo-1596797038530-2c107229654b?q=80&w=800&auto=format&fit=crop' },
         { id: '3', name: 'Paratha Breakfast', description: '2 Aloo Paratha with Curd and Pickle.', price: 120, category: 'breakfast', image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?q=80&w=800&auto=format&fit=crop' },
-        { id: '4', name: 'Dal Khichdi', description: 'Light and nutritious dal khichdi with ghee.', price: 100, category: 'dinner', image: 'https://images.unsplash.com/photo-1545231027-63b3f162934c?q=80&w=800&auto=format&fit=crop' },
-        { id: '5', name: 'Poha Special', description: 'Indori Poha with sev, pomegranate, and lemon.', price: 80, category: 'breakfast', image: 'https://images.unsplash.com/photo-1626132646533-46b582048fd6?q=80&w=800&auto=format&fit=crop' },
+        { id: '4', name: 'Dal Khichdi', description: 'Light and nutritious dal khichdi with ghee.', price: 100, category: 'dinner', image: 'https://images.unsplash.com/photo-1574484284002-952d92456975?q=80&w=800&auto=format&fit=crop' },
+        { id: '5', name: 'Poha Special', description: 'Indori Poha with sev, pomegranate, and lemon.', price: 80, category: 'breakfast', image: 'https://images.unsplash.com/photo-1567337710282-00832b415979?q=80&w=800&auto=format&fit=crop' },
         { id: '6', name: 'Executive Meal', description: 'Choice of Paneer, 2 Sabzi, 3 Roti, Rice, Sweet, Dal, Salad, Raita.', price: 300, category: 'lunch', image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?q=80&w=800&auto=format&fit=crop' },
         { id: '7', name: 'Paneer Butter Masala Combo', description: 'Paneer Butter Masala served with 2 Garlic Naan.', price: 220, category: 'dinner', image: 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?q=80&w=800&auto=format&fit=crop' },
-        { id: '8', name: 'Veg Biryani', description: 'Aromatic basmati rice cooked with fresh vegetables and spices.', price: 180, category: 'dinner', image: 'https://images.unsplash.com/photo-1563379091339-03b21bc4a4f8?q=80&w=800&auto=format&fit=crop' },
+        { id: '8', name: 'Veg Biryani', description: 'Aromatic basmati rice cooked with fresh vegetables and spices.', price: 180, category: 'dinner', image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?q=80&w=800&auto=format&fit=crop' },
       ];
       for (const item of items) {
         await query('INSERT INTO menu_items (id, name, description, price, category, image) VALUES ($1, $2, $3, $4, $5, $6)', [item.id, item.name, item.description, item.price, item.category, item.image]);

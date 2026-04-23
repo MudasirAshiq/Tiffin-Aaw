@@ -74,7 +74,7 @@ const ConfirmationModal = ({
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="w-full max-w-sm bg-white rounded-[40px] p-10 shadow-2xl text-center"
+        className="w-full max-w-sm bg-white rounded-[40px] p-6 sm:p-10 shadow-2xl text-center"
       >
         <div className={cn(
           "w-20 h-20 rounded-3xl mx-auto flex items-center justify-center mb-8",
@@ -107,11 +107,12 @@ const ConfirmationModal = ({
   );
 };
 
-const Navbar = ({ activeTab, setActiveTab, cartCount, role }: { 
+const Navbar = ({ activeTab, setActiveTab, cartCount, role, isLoggedIn }: { 
   activeTab: string, 
   setActiveTab: (tab: string) => void, 
   cartCount: number,
-  role?: string 
+  role?: string,
+  isLoggedIn?: boolean 
 }) => {
   const tabs = role === 'admin' 
     ? [
@@ -131,7 +132,7 @@ const Navbar = ({ activeTab, setActiveTab, cartCount, role }: {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-2xl border-t border-gray-100 px-4 sm:px-6 pb-6 sm:pb-8 pt-4 z-50">
-      <div className="flex justify-between items-center max-w-lg mx-auto">
+      <div className="flex justify-between items-center max-w-lg md:max-w-2xl lg:max-w-3xl mx-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -143,9 +144,18 @@ const Navbar = ({ activeTab, setActiveTab, cartCount, role }: {
           >
             <div className={cn(
               "p-2 rounded-2xl transition-all duration-300",
-              activeTab === tab.id ? "bg-orange-50" : "group-hover:bg-gray-50"
+              tab.id === 'profile' && isLoggedIn
+                ? "bg-orange-500 shadow-lg shadow-orange-200"
+                : activeTab === tab.id ? "bg-orange-50" : "group-hover:bg-gray-50"
             )}>
-              <tab.icon size={role === 'admin' ? 18 : 20} className={activeTab === tab.id ? "stroke-[2.5px]" : "stroke-2"} />
+              <tab.icon 
+                size={role === 'admin' ? 18 : 20} 
+                className={cn(
+                  tab.id === 'profile' && isLoggedIn
+                    ? "text-white stroke-[2.5px] fill-white/30"
+                    : activeTab === tab.id ? "stroke-[2.5px]" : "stroke-2"
+                )} 
+              />
             </div>
             <span className={cn(
               "text-[8px] sm:text-[9px] uppercase font-black tracking-tighter truncate w-full text-center px-1",
@@ -305,16 +315,16 @@ export default function App() {
   const checkAuth = async () => {
     try {
       setConnectionError(false);
-      const res = await fetchWithRetry('/api/auth/me');
+      const res = await fetch('/api/auth/me');
       if (res.ok) {
         const data = await res.json();
         setUser(data);
         if (data.role === 'admin') setActiveTab('admin-orders');
         addToast(`Welcome back, ${data.name}!`, "Your tiffin journey continues.", "success");
       }
+      // 401 is expected when not logged in — no action needed
     } catch (e) {
-      console.error('Auth check failed:', e);
-      // No longer setting view to auth here, as we want to allow guest browsing
+      // Network error — silently allow guest browsing
     } finally {
       setIsAuthLoading(false);
     }
@@ -495,7 +505,7 @@ export default function App() {
                   <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors" size={18} />
                   <input 
                     type="text"
-                    placeholder="Craving for something specific?"
+                    placeholder="Search for a dish..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full bg-white/70 backdrop-blur-sm border border-gray-100 p-4 pl-14 rounded-2xl text-[13px] font-bold text-gray-900 placeholder:text-gray-300 focus:bg-white focus:ring-4 focus:ring-orange-500/10 focus:border-orange-200 transition-all outline-none shadow-sm"
@@ -504,7 +514,7 @@ export default function App() {
               )}
             </header>
 
-            <main className="max-w-xl mx-auto px-6">
+            <main className="max-w-xl md:max-w-2xl lg:max-w-3xl mx-auto px-4 sm:px-6">
               <AnimatePresence mode="wait">
                 {activeTab === 'home' && (
                   <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -599,7 +609,7 @@ export default function App() {
               </AnimatePresence>
             </main>
 
-            <Navbar activeTab={activeTab} setActiveTab={setActiveTab} cartCount={cart.length} role={user?.role} />
+            <Navbar activeTab={activeTab} setActiveTab={setActiveTab} cartCount={cart.length} role={user?.role} isLoggedIn={!!user} />
             
             <ToastContainer toasts={toasts} />
           </motion.div>
@@ -643,6 +653,17 @@ const AuthView = ({ setUser, setView }: { setUser: (u: User) => void, setView: (
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-500/5 rounded-full blur-[120px]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/5 rounded-full blur-[120px]" />
 
+      {/* Back to Home */}
+      <motion.button
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        onClick={() => setView('app')}
+        className="absolute top-8 left-4 sm:left-6 z-20 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2.5 rounded-2xl shadow-lg shadow-gray-100 border border-gray-100 text-gray-500 hover:text-orange-500 hover:border-orange-100 hover:shadow-orange-100 active:scale-95 transition-all group"
+      >
+        <ChevronRight size={16} className="rotate-180 group-hover:-translate-x-0.5 transition-transform" />
+        <span className="text-[10px] font-black uppercase tracking-widest">Home</span>
+      </motion.button>
+
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -653,7 +674,7 @@ const AuthView = ({ setUser, setView }: { setUser: (u: User) => void, setView: (
              <Utensils size={32} strokeWidth={2.5} />
           </div>
           <h2 className="text-3xl sm:text-4xl font-black tracking-tighter text-gray-900 leading-none">Tiffin<span className="text-orange-500 italic">Aaw</span></h2>
-          <p className="text-gray-400 font-bold mt-3 text-[10px] uppercase tracking-[0.2em]">{isLogin ? 'Back to your favorite kitchen' : 'Join the elite food club'}</p>
+          <p className="text-gray-400 font-bold mt-3 text-[10px] uppercase tracking-[0.2em]">{isLogin ? 'Welcome back! Sign in below' : 'Create your free account'}</p>
         </div>
 
         {error && (
@@ -699,7 +720,7 @@ const AuthView = ({ setUser, setView }: { setUser: (u: User) => void, setView: (
             onChange={e => setFormData({ ...formData, password: e.target.value })}
           />
           <button className="w-full bg-orange-500 text-white p-5 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-orange-100 active:scale-95 transition-all mt-4">
-            {isLogin ? 'Initiate Session' : 'Create Profile'}
+            {isLogin ? 'Log In' : 'Sign Up'}
           </button>
         </form>
 
@@ -707,9 +728,15 @@ const AuthView = ({ setUser, setView }: { setUser: (u: User) => void, setView: (
           onClick={() => setIsLogin(!isLogin)}
           className="w-full mt-8 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-orange-500 transition-colors"
         >
-          {isLogin ? "New here? Register" : 'Have an account? Login'}
+          {isLogin ? "New here? Sign Up" : 'Already have an account? Log In'}
         </button>
       </motion.div>
+
+      <div className="absolute bottom-8 left-0 right-0 text-center z-20 pointer-events-none">
+        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">
+          Designed By <span className="text-orange-500">CodeFONS</span>
+        </p>
+      </div>
     </div>
   );
 };
@@ -722,6 +749,31 @@ const MenuView = ({ menu, addToCart, cart, removeFromCart, searchQuery }: {
   searchQuery: string
 }) => {
   const [filter, setFilter] = useState('All');
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const autoScrollPaused = useRef(false);
+
+  // Auto-scroll for Recommended section
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const interval = setInterval(() => {
+      if (autoScrollPaused.current) return;
+
+      const { scrollLeft, scrollWidth, clientWidth } = container;
+      const maxScroll = scrollWidth - clientWidth;
+
+      if (scrollLeft >= maxScroll - 2) {
+        // Loop back to start smoothly
+        container.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        // Scroll by one card width (~280px + 24px gap)
+        container.scrollBy({ left: 304, behavior: 'smooth' });
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [menu]);
   
   const searchedMenu = menu.filter(m => 
     m.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -767,7 +819,14 @@ const MenuView = ({ menu, addToCart, cart, removeFromCart, searchQuery }: {
           </div>
           <button className="text-orange-500 text-[11px] font-black uppercase tracking-widest active:scale-95 transition-transform">SEE ALL</button>
         </div>
-        <div className="flex gap-6 overflow-x-auto pb-4 -mx-6 px-6 scrollbar-hide">
+        <div 
+          ref={scrollRef}
+          onMouseEnter={() => autoScrollPaused.current = true}
+          onMouseLeave={() => autoScrollPaused.current = false}
+          onTouchStart={() => autoScrollPaused.current = true}
+          onTouchEnd={() => { setTimeout(() => autoScrollPaused.current = false, 4000); }}
+          className="flex gap-6 overflow-x-auto pb-4 -mx-6 px-6 scrollbar-hide"
+        >
           {menu.slice(0, 3).map(item => (
             <motion.div 
               key={`featured-${item.id}`}
@@ -864,7 +923,7 @@ const MenuView = ({ menu, addToCart, cart, removeFromCart, searchQuery }: {
          <div className="p-6 bg-orange-50 rounded-[32px] border border-orange-100/50 flex flex-col items-center text-center">
             <ShieldCheck className="text-orange-600 mb-3" size={32} />
             <h5 className="font-black text-xs uppercase tracking-widest mb-1">Hygienic</h5>
-            <p className="text-[10px] font-bold text-gray-400">ISO Certified Kitchens</p>
+            <p className="text-[10px] font-bold text-gray-400">Clean & Safe Kitchens</p>
          </div>
          <div className="p-6 bg-blue-50 rounded-[32px] border border-blue-100/50 flex flex-col items-center text-center">
             <Truck className="text-blue-600 mb-3" size={32} />
@@ -872,6 +931,12 @@ const MenuView = ({ menu, addToCart, cart, removeFromCart, searchQuery }: {
             <p className="text-[10px] font-bold text-gray-400">30 Min Delivery</p>
          </div>
       </section>
+
+      <div className="pt-12 text-center opacity-60 hover:opacity-100 transition-opacity">
+        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">
+          Designed By <span className="text-orange-500">CodeFONS</span>
+        </p>
+      </div>
     </motion.div>
   );
 };
@@ -896,7 +961,7 @@ const CartView = ({ cart, setCart, setActiveTab, user, addToast }: {
 
   const placeOrder = async () => {
     if (paymentMethod === 'wallet' && (user.wallet || 0) < total) {
-      addToast("Payment Error", "Insufficient wallet balance!", "warning");
+      addToast("Payment Error", "Not enough money in your wallet!", "warning");
       return;
     }
     setIsOrdering(true);
@@ -980,7 +1045,7 @@ const CartView = ({ cart, setCart, setActiveTab, user, addToast }: {
               <span className="text-gray-900">{formatCurrency(deliveryFee)}</span>
             </div>
             <div className="pt-4 border-t border-dashed border-gray-200 flex justify-between items-center bg-orange-50 -mx-8 px-8 py-4 md:py-5 mt-4">
-              <span className="text-orange-500 font-black text-lg md:text-xl uppercase tracking-tighter italic">Total Amount</span>
+              <span className="text-orange-500 font-black text-lg md:text-xl uppercase tracking-tighter italic">You Pay</span>
               <span className="text-orange-500 font-black text-xl md:text-2xl italic">{formatCurrency(total)}</span>
             </div>
           </div>
@@ -996,7 +1061,7 @@ const CartView = ({ cart, setCart, setActiveTab, user, addToast }: {
               onClick={() => setStep('address')}
               className="flex-[2] bg-gray-900 text-white p-4 md:p-6 rounded-3xl font-black text-sm md:text-lg uppercase tracking-widest shadow-2xl shadow-gray-200 active:scale-95 transition-all flex items-center justify-center gap-3"
             >
-              Delivery Details <ChevronRight size={18} className="md:w-5 md:h-5" />
+              Add Address <ChevronRight size={18} className="md:w-5 md:h-5" />
             </button>
           </div>
         </div>
@@ -1066,7 +1131,7 @@ const CartView = ({ cart, setCart, setActiveTab, user, addToast }: {
             disabled={!address || !phone}
             className="w-full bg-gray-900 text-white p-6 rounded-[32px] font-black text-lg uppercase tracking-widest shadow-2xl shadow-gray-200 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
           >
-            Choose Payment <ChevronRight size={20} />
+            Continue to Pay <ChevronRight size={20} />
           </button>
         </div>
       )}
@@ -1087,7 +1152,7 @@ const CartView = ({ cart, setCart, setActiveTab, user, addToast }: {
                <div className="bg-orange-500 text-white p-3 rounded-2xl"><CreditCard size={24} /></div>
                <div className="text-left">
                   <p className="font-black tracking-tight">Net Banking / UPI</p>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Secure Gateway</p>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Pay Online Safely</p>
                </div>
                {paymentMethod === 'online' && <div className="absolute top-4 right-4"><CheckCircle2 size={24} className="text-orange-500" /></div>}
             </button>
@@ -1109,7 +1174,7 @@ const CartView = ({ cart, setCart, setActiveTab, user, addToast }: {
 
           <div className="p-8 bg-black/5 rounded-[40px] border border-black/5">
              <div className="flex justify-between items-center">
-                <p className="font-black uppercase tracking-widest text-[10px] text-gray-500">Amount to pay</p>
+                <p className="font-black uppercase tracking-widest text-[10px] text-gray-500">Total to Pay</p>
                 <p className="font-black text-2xl italic">{formatCurrency(total)}</p>
              </div>
           </div>
@@ -1333,7 +1398,7 @@ const ProfileView = ({ user, orders, setUser, onLogout, notificationsEnabled, re
     <motion.div 
       initial={{ opacity: 0, y: 20 }} 
       animate={{ opacity: 1, y: 0 }} 
-      className="max-w-2xl mx-auto space-y-12 pb-20"
+      className="max-w-2xl mx-auto space-y-8 sm:space-y-12 pb-20 px-0 sm:px-0"
     >
       {/* Editorial Header */}
       <div className="relative pt-12 text-center overflow-hidden">
@@ -1413,7 +1478,7 @@ const ProfileView = ({ user, orders, setUser, onLogout, notificationsEnabled, re
       </div>
 
       {/* Bento Sections */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 px-2 sm:px-6">
         {/* Quick Stats */}
         <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div className="bg-gray-900 text-white p-8 rounded-[48px] shadow-xl shadow-gray-200">
@@ -1450,8 +1515,8 @@ const ProfileView = ({ user, orders, setUser, onLogout, notificationsEnabled, re
                 <History size={28} strokeWidth={2.5} />
               </div>
               <div>
-                <h3 className="text-2xl font-black tracking-tighter">The Food Log</h3>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{orders.length} Previous Cravings</p>
+                <h3 className="text-2xl font-black tracking-tighter">Past Orders</h3>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{orders.length} Orders So Far</p>
               </div>
             </div>
             <div className={cn("p-2 rounded-xl bg-gray-50 transition-transform group-hover:bg-orange-50 group-hover:text-orange-500", expandedSection === 'history' && "rotate-180")}>
@@ -1471,8 +1536,8 @@ const ProfileView = ({ user, orders, setUser, onLogout, notificationsEnabled, re
                 {orders.length === 0 ? (
                   <div className="text-center py-20 opacity-30">
                     <UtensilsCrossed size={48} className="mx-auto mb-4" />
-                    <p className="font-black tracking-tight text-xl">The Plate is Empty</p>
-                    <p className="text-sm font-bold mt-1 italic font-serif">Start your culinary journey today.</p>
+                    <p className="font-black tracking-tight text-xl">No Orders Yet</p>
+                    <p className="text-sm font-bold mt-1 italic font-serif">Order your first meal today!</p>
                   </div>
                 ) : (
                   orders.map(order => (
@@ -1483,7 +1548,7 @@ const ProfileView = ({ user, orders, setUser, onLogout, notificationsEnabled, re
                     >
                       <div className="flex justify-between items-start mb-6">
                         <div>
-                          <span className="text-[9px] font-black text-orange-500/50 uppercase tracking-[0.2em]">RARE_0{order.id.slice(0,4)}</span>
+                          <span className="text-[9px] font-black text-orange-500/50 uppercase tracking-[0.2em]">Order #{order.id.slice(0,4)}</span>
                           <p className="font-black text-lg -mt-1">{new Date(order.createdAt).toLocaleDateString(undefined, {month: 'short', day: 'numeric', year: 'numeric'})}</p>
                         </div>
                         <StatusBadge status={order.status} />
@@ -1536,8 +1601,8 @@ const ProfileView = ({ user, orders, setUser, onLogout, notificationsEnabled, re
                 <MapPin size={28} strokeWidth={2.5} />
               </div>
               <div>
-                <h3 className="text-2xl font-black tracking-tighter text-gray-900">Your Base Map</h3>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{user.addresses?.length || 0} Registered Spots</p>
+                <h3 className="text-2xl font-black tracking-tighter text-gray-900">Saved Addresses</h3>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">{user.addresses?.length || 0} Addresses Saved</p>
               </div>
             </div>
             <div className={cn("p-2 rounded-xl bg-gray-50 transition-transform group-hover:bg-blue-50 group-hover:text-blue-500", expandedSection === 'addresses' && "rotate-180")}>
@@ -1565,8 +1630,8 @@ const ProfileView = ({ user, orders, setUser, onLogout, notificationsEnabled, re
                           className="w-full bg-white/10 text-white p-4 rounded-2xl font-bold text-sm outline-none mb-4 min-h-[100px] border border-white/10"
                         />
                         <div className="flex gap-2">
-                          <button onClick={finishEditing} className="flex-1 bg-orange-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20">Save Spot</button>
-                          <button onClick={() => setEditingAddress(null)} className="flex-1 bg-white/10 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest">Abandon</button>
+                          <button onClick={finishEditing} className="flex-1 bg-orange-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-orange-500/20">Save</button>
+                          <button onClick={() => setEditingAddress(null)} className="flex-1 bg-white/10 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest">Cancel</button>
                         </div>
                       </div>
                     ) : (
@@ -1590,7 +1655,7 @@ const ProfileView = ({ user, orders, setUser, onLogout, notificationsEnabled, re
                    <input 
                      value={newAddress}
                      onChange={e => setNewAddress(e.target.value)}
-                     placeholder="Drop a new coordinate..."
+                     placeholder="Type a new address..."
                      className="flex-1 p-5 bg-white border border-gray-100 rounded-3xl font-bold text-sm outline-none focus:ring-4 focus:ring-blue-500/10 placeholder:text-gray-300 shadow-sm"
                    />
                    <button 
@@ -1613,8 +1678,14 @@ const ProfileView = ({ user, orders, setUser, onLogout, notificationsEnabled, re
           className="w-full bg-white border-2 border-red-50 text-red-500 p-10 rounded-[56px] font-black text-sm uppercase tracking-[0.4em] hover:bg-red-500 hover:text-white hover:border-red-500 transition-all shadow-xl shadow-red-100/20 flex items-center justify-center gap-6 group"
         >
           <LogOut size={24} className="group-hover:-translate-x-3 transition-transform" /> 
-          Sign Out of Tiffin
+          Log Out
         </button>
+      </div>
+
+      <div className="pt-12 text-center opacity-60 hover:opacity-100 transition-opacity">
+        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-400">
+          Designed By <span className="text-orange-500">CodeFONS</span>
+        </p>
       </div>
     </motion.div>
   );
@@ -1686,8 +1757,8 @@ const AdminDashboardView = ({ orders }: { orders: Order[] }) => {
       <div className="bg-white p-6 sm:p-10 rounded-[32px] sm:rounded-[48px] border border-orange-50 shadow-xl shadow-orange-100 flex flex-col items-center text-center overflow-hidden relative">
          <div className="absolute top-0 right-0 w-24 sm:w-32 h-24 sm:h-32 bg-orange-500/5 rounded-bl-[60px] sm:rounded-bl-[80px]" />
          <TrendingUp className="text-orange-500 mb-4" size={32} sm:size={40} />
-         <h2 className="text-2xl sm:text-4xl font-black tracking-tighter">Control Center</h2>
-         <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mt-2 italic font-serif">Global Kitchen Logistics</p>
+         <h2 className="text-2xl sm:text-4xl font-black tracking-tighter">Dashboard</h2>
+         <p className="text-[9px] sm:text-[10px] font-black text-gray-400 uppercase tracking-[0.3em] mt-2 italic font-serif">Your Business At A Glance</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1706,7 +1777,7 @@ const AdminDashboardView = ({ orders }: { orders: Order[] }) => {
             <div>
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Active Orders</p>
               <p className="text-xl sm:text-2xl font-black tabular-nums">{stats.active}</p>
-              <p className="text-[9px] font-black text-orange-400 mt-1 uppercase">Live Sync On</p>
+              <p className="text-[9px] font-black text-orange-400 mt-1 uppercase">Updating Live</p>
             </div>
          </div>
       </div>
@@ -1753,17 +1824,17 @@ const AdminDashboardView = ({ orders }: { orders: Order[] }) => {
 
       <div className="bg-gray-900 p-8 rounded-[40px] shadow-2xl relative overflow-hidden group">
          <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/5 rounded-full group-hover:scale-125 transition-transform duration-1000" />
-         <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-4">Operations Insights</p>
-         <h4 className="text-white font-black text-2xl tracking-tighter mb-2">Average Ticket Value</h4>
-         <p className="text-white/60 text-sm font-bold leading-relaxed mb-6 italic font-serif">"The balance between quality and velocity is the key to culinary scale."</p>
+         <p className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-4">Quick Insight</p>
+         <h4 className="text-white font-black text-2xl tracking-tighter mb-2">Average Order Value</h4>
+         <p className="text-white/60 text-sm font-bold leading-relaxed mb-6 italic font-serif">"How much each customer spends on average per order."</p>
          <div className="flex items-end justify-between">
             <span className="text-3xl font-black text-white tabular-nums">{formatCurrency(stats.avgOrder)}</span>
-            <span className="bg-white/10 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest">Per Transaction</span>
+            <span className="bg-white/10 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest">Per Order</span>
          </div>
       </div>
 
       <div className="bg-white p-8 rounded-[40px] border border-gray-100 shadow-sm">
-         <h4 className="font-black text-lg mb-6 tracking-tight">Recent Activity Log</h4>
+         <h4 className="font-black text-lg mb-6 tracking-tight">Recent Orders</h4>
          <div className="space-y-4">
             {orders.slice(0, 5).map(order => (
                <div key={order.id} className="flex items-center justify-between border-b border-gray-50 pb-4 last:border-0 last:pb-0">
@@ -1815,7 +1886,7 @@ const AdminOrdersView = ({ orders, fetchOrders }: { orders: Order[], fetchOrders
     <div className="space-y-8">
        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
           <div>
-            <h2 className="text-3xl font-black tracking-tighter">Kitchen Feed</h2>
+            <h2 className="text-3xl font-black tracking-tighter">All Orders</h2>
             <div className="mt-2 flex items-center gap-2">
               <div className="px-3 py-1 bg-green-100 text-green-700 text-[9px] font-black uppercase tracking-widest rounded-full flex items-center gap-1.5 animate-pulse w-fit">
                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Live Updates
@@ -1857,7 +1928,7 @@ const AdminOrdersView = ({ orders, fetchOrders }: { orders: Order[], fetchOrders
           {!Array.isArray(orders) || orders.length === 0 ? (
             <div className="p-20 text-center bg-white rounded-[48px] border border-dashed border-gray-200">
                <Package className="mx-auto text-gray-200 mb-4" size={48} />
-               <p className="text-gray-300 font-black italic">Feed is empty</p>
+               <p className="text-gray-300 font-black italic">No orders yet</p>
             </div>
           ) : filteredOrders.length === 0 ? (
             <div className="p-20 text-center bg-white rounded-[48px] border border-dashed border-gray-200">
@@ -1894,15 +1965,15 @@ const AdminOrdersView = ({ orders, fetchOrders }: { orders: Order[], fetchOrders
                     </p>
                   )}
                   <div className="pt-3 border-t border-gray-200 flex justify-between font-black text-orange-500 italic text-sm md:text-base">
-                     <span>Total Revenue</span>
+                     <span>Order Total</span>
                      <span>{formatCurrency(order.total)}</span>
                   </div>
                </div>
 
                <div className="grid grid-cols-3 gap-2" onClick={e => e.stopPropagation()}>
                   {[
-                    { s: 'preparing', icon: Utensils, label: 'Kitchen' },
-                    { s: 'on-the-way', icon: Truck, label: 'Ship' },
+                    { s: 'preparing', icon: Utensils, label: 'Cooking' },
+                    { s: 'on-the-way', icon: Truck, label: 'Sending' },
                     { s: 'delivered', icon: CheckCircle2, label: 'Done' }
                   ].map(({ s, icon: Icon, label }) => (
                     <button 
@@ -1967,7 +2038,7 @@ const AdminSupportView = ({ user, messages, socket }: { user: User, messages: Ch
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl md:text-3xl font-black tracking-tighter">Support Desk</h2>
+        <h2 className="text-2xl md:text-3xl font-black tracking-tighter">Customer Help</h2>
         <div className="relative w-full sm:w-64 group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-orange-500 transition-colors" size={16} />
           <input 
@@ -1988,7 +2059,7 @@ const AdminSupportView = ({ user, messages, socket }: { user: User, messages: Ch
         )}>
            {filteredUserIds.length === 0 ? (
              <div className="p-10 text-center bg-white rounded-[32px] border border-dashed border-gray-100 text-gray-300 font-bold italic text-sm">
-                No active tickets
+                No messages yet
              </div>
            ) : (
              filteredUserIds.map(uId => (
@@ -2129,7 +2200,7 @@ const AdminUsersView = () => {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <h2 className="text-3xl font-black tracking-tighter text-gray-900 flex items-center gap-4 whitespace-nowrap">
-          Community <span className="text-orange-500 italic">Core</span>
+          All <span className="text-orange-500 italic">Users</span>
         </h2>
         
         <div className="flex flex-1 w-full max-w-2xl gap-3">
@@ -2151,9 +2222,9 @@ const AdminUsersView = () => {
               value={roleFilter}
               onChange={e => setRoleFilter(e.target.value as any)}
             >
-              <option value="all">Every Role</option>
-              <option value="user">Standard Users</option>
-              <option value="admin">Administrators</option>
+              <option value="all">All Roles</option>
+              <option value="user">Users</option>
+              <option value="admin">Admins</option>
             </select>
             <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none" size={14} />
           </div>
@@ -2204,7 +2275,7 @@ const AdminUsersView = () => {
                   "text-[8px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-full",
                   user.role === 'admin' ? "bg-gray-900 text-white" : "bg-orange-50 text-orange-500 border border-orange-100"
                 )}>
-                  {user.role} Status
+                  {user.role === 'admin' ? 'Admin' : 'User'}
                 </span>
                 <div className="flex -space-x-1">
                    {user.addresses?.slice(0, 3).map((_, i) => (
@@ -2253,7 +2324,7 @@ const AdminUsersView = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-[48px] p-10 w-full max-w-sm text-center shadow-2xl overflow-hidden relative"
+              className="bg-white rounded-[32px] sm:rounded-[48px] p-6 sm:p-10 w-full max-w-sm text-center shadow-2xl overflow-hidden relative"
             >
               <div className={cn(
                 "w-20 h-20 mx-auto rounded-3xl flex items-center justify-center mb-6 shadow-xl",
@@ -2261,7 +2332,7 @@ const AdminUsersView = () => {
               )}>
                 {confirmingRole.newRole === 'admin' ? <ShieldCheck size={40} /> : <ShieldAlert size={40} />}
               </div>
-              <h3 className="text-2xl font-black tracking-tight text-gray-900 mb-2">Upgrade Permissions?</h3>
+              <h3 className="text-2xl font-black tracking-tight text-gray-900 mb-2">Change User Role?</h3>
               <p className="text-sm font-bold text-gray-400 leading-relaxed mb-10">
                 Are you sure you want to change this user's role to <span className="text-gray-900 font-black uppercase tracking-widest text-xs italic">{confirmingRole.newRole}</span>?
               </p>
@@ -2271,7 +2342,7 @@ const AdminUsersView = () => {
                   onClick={() => setConfirmingRole(null)}
                   className="flex-1 p-5 rounded-2xl bg-gray-50 text-gray-400 font-black uppercase tracking-widest text-[10px] hover:bg-gray-100 transition-colors"
                 >
-                  Regret
+                  Cancel
                 </button>
                 <button 
                   onClick={confirmToggleRole}
@@ -2314,7 +2385,7 @@ const UserDetailModal = ({ user, onClose, onToggleRole }: { user: User, onClose:
             </div>
             <h3 className="text-3xl font-black tracking-tighter text-gray-900">{user.name}</h3>
             <p className="text-xs font-black text-orange-500 uppercase tracking-widest mt-2 bg-orange-50 px-3 py-1 rounded-full">
-              {user.role} Status
+              {user.role === 'admin' ? 'Admin' : 'User'}
             </p>
           </div>
 
@@ -2331,7 +2402,7 @@ const UserDetailModal = ({ user, onClose, onToggleRole }: { user: User, onClose:
             </div>
 
             <div className="bg-gray-50 p-6 rounded-[32px] border border-gray-100">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Primary Account Addresses</p>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Saved Addresses</p>
               <div className="space-y-3">
                 {user.addresses && user.addresses.length > 0 ? (
                   user.addresses.map((addr, idx) => (
@@ -2358,7 +2429,7 @@ const UserDetailModal = ({ user, onClose, onToggleRole }: { user: User, onClose:
               )}
             >
               <Users size={18} />
-              Toggle {user.role === 'admin' ? 'to User' : 'to Admin'}
+              Make {user.role === 'admin' ? 'User' : 'Admin'}
             </button>
           </div>
         </div>
@@ -2389,7 +2460,7 @@ const OrderTrackerModal = ({ order, onClose }: { order: Order, onClose: () => vo
       <motion.div 
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="w-full max-w-sm bg-white rounded-[48px] overflow-hidden shadow-2xl relative"
+        className="w-full max-w-sm bg-white rounded-[32px] sm:rounded-[48px] overflow-hidden shadow-2xl relative"
       >
         <button onClick={onClose} className="absolute top-8 right-8 text-gray-400 hover:text-black transition-colors"><X size={24} /></button>
         
@@ -2452,7 +2523,7 @@ const OrderTrackerModal = ({ order, onClose }: { order: Order, onClose: () => vo
         onClose={() => setShowCancelConfirm(false)}
         onConfirm={handleCancel}
         title="Cancel Order?"
-        message="Running away? If you cancel now, your stomach might hold a grudge. Also, refunds can take up to 48 hours to reflect in your wallet."
+        message="Are you sure? If you paid with wallet, the refund may take up to 48 hours."
         confirmText="Yes, Cancel it"
       />
     </div>
@@ -2515,7 +2586,7 @@ const AdminMenuView = ({ menu, fetchMenu }: { menu: MenuItem[], fetchMenu: () =>
   return (
     <div className="space-y-6 md:space-y-8">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl md:text-3xl font-black tracking-tighter text-gray-900">Menu Vault</h2>
+        <h2 className="text-2xl md:text-3xl font-black tracking-tighter text-gray-900">Menu Items</h2>
         <button 
           onClick={() => setEditing({ name: '', price: 0, description: '', category: 'lunch', image: '' })}
           className="bg-gray-900 text-white px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest flex items-center gap-2"
@@ -2548,7 +2619,7 @@ const AdminMenuView = ({ menu, fetchMenu }: { menu: MenuItem[], fetchMenu: () =>
         onConfirm={deleteItem}
         title="Delete Item?"
         message="Are you sure you want to remove this dish from the menu? This action cannot be undone."
-        confirmText="Internal Delete"
+        confirmText="Yes, Delete"
         type="danger"
       />
 
@@ -2557,10 +2628,10 @@ const AdminMenuView = ({ menu, fetchMenu }: { menu: MenuItem[], fetchMenu: () =>
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-white w-full max-w-sm rounded-[48px] p-10 relative shadow-2xl"
+              className="bg-white w-full max-w-sm rounded-[32px] sm:rounded-[48px] p-6 sm:p-10 relative shadow-2xl"
             >
               <button onClick={() => setEditing(null)} className="absolute top-8 right-8 text-gray-400"><X size={24} /></button>
-              <h3 className="text-2xl font-black tracking-tighter mb-8">{editing.id ? 'Refine Item' : 'Source New Dish'}</h3>
+              <h3 className="text-2xl font-black tracking-tighter mb-8">{editing.id ? 'Edit Dish' : 'Add New Dish'}</h3>
               
               <form onSubmit={saveItem} className="space-y-4">
                 <input 
@@ -2599,7 +2670,7 @@ const AdminMenuView = ({ menu, fetchMenu }: { menu: MenuItem[], fetchMenu: () =>
                   ) : (
                     <>
                       <ImageIcon className="text-gray-300 mb-2" size={32} />
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center px-4">Tap to upload a mouth-watering image</span>
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center px-4">Tap to upload a photo</span>
                     </>
                   )}
                   {isUploading && (
@@ -2623,7 +2694,7 @@ const AdminMenuView = ({ menu, fetchMenu }: { menu: MenuItem[], fetchMenu: () =>
                   value={editing.description} onChange={e => setEditing({ ...editing, description: e.target.value })}
                 />
                 <button className="w-full bg-orange-500 text-white p-5 rounded-[24px] font-black uppercase tracking-widest shadow-xl shadow-orange-100">
-                  Seal the Deal
+                  Save Dish
                 </button>
               </form>
             </motion.div>
@@ -2676,7 +2747,7 @@ const AdminOrderDetailsModal = ({ order, onClose, onUpdateStatus }: {
                 <Package size={32} />
              </div>
              <div>
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Detailed Log • #{order.id}</span>
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">Order • #{order.id}</span>
                 <h2 className="text-3xl font-black tracking-tighter leading-tight">Order Details</h2>
              </div>
           </div>
@@ -2684,7 +2755,7 @@ const AdminOrderDetailsModal = ({ order, onClose, onUpdateStatus }: {
           <div className="space-y-6 mb-8">
              <div className="p-8 bg-orange-50/50 rounded-[40px] border border-orange-100 flex flex-col gap-2 relative overflow-hidden">
                 <div className="absolute -top-6 -right-6 w-24 h-24 bg-orange-500/5 rounded-full" />
-                <p className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em]">Primary Customer</p>
+                <p className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em]">Customer Info</p>
                 <h4 className="font-black text-2xl tracking-tighter leading-none">{order.userName}</h4>
                 <div className="flex flex-col gap-1 mt-2">
                    <p className="text-sm font-bold text-gray-600 flex items-center gap-2">
@@ -2700,10 +2771,10 @@ const AdminOrderDetailsModal = ({ order, onClose, onUpdateStatus }: {
                 <div className="p-6 bg-gray-50 rounded-[32px] border border-gray-100">
                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Order Status</p>
                    <StatusBadge status={order.status} />
-                   <p className="text-[9px] font-black text-gray-400 mt-2 uppercase tracking-tighter">Live Sync: Active</p>
+                   <p className="text-[9px] font-black text-gray-400 mt-2 uppercase tracking-tighter">Updates Automatically</p>
                 </div>
                 <div className="p-6 bg-gray-50 rounded-[32px] border border-gray-100">
-                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Placement Time</p>
+                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Ordered On</p>
                    <div className="space-y-1">
                       <p className="font-black text-sm leading-none">{new Date(order.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' })}</p>
                       <p className="font-bold text-[11px] text-orange-500 italic">{new Date(order.createdAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</p>
@@ -2719,7 +2790,7 @@ const AdminOrderDetailsModal = ({ order, onClose, onUpdateStatus }: {
 
           <div className="bg-white border border-gray-100 rounded-[40px] overflow-hidden shadow-sm mb-8">
              <div className="p-6 bg-gray-50/50 border-b border-gray-100">
-                <p className="font-black text-xs uppercase tracking-widest">Itemized Breakdown</p>
+                <p className="font-black text-xs uppercase tracking-widest">Order Items</p>
              </div>
              <div className="p-6 space-y-4 max-h-[25vh] overflow-y-auto">
                 {order.items.map(item => (
@@ -2736,7 +2807,7 @@ const AdminOrderDetailsModal = ({ order, onClose, onUpdateStatus }: {
                 ))}
              </div>
              <div className="p-6 bg-orange-50 pt-6 flex justify-between items-center">
-                <span className="font-black uppercase tracking-tighter text-orange-950">Total Settlement</span>
+                <span className="font-black uppercase tracking-tighter text-orange-950">Total Paid</span>
                 <span className="font-black text-2xl text-orange-600 italic">{formatCurrency(order.total)}</span>
              </div>
           </div>
@@ -2744,7 +2815,7 @@ const AdminOrderDetailsModal = ({ order, onClose, onUpdateStatus }: {
           <div className="flex gap-3 pt-2">
              {[
                { s: 'preparing', icon: Utensils, label: 'Kitchen' },
-               { s: 'on-the-way', icon: Truck, label: 'Dispatch' },
+               { s: 'on-the-way', icon: Truck, label: 'On The Way' },
                { s: 'delivered', icon: CheckCircle2, label: 'Delivered' }
              ].map(({ s, icon: Icon, label }) => (
                <button 
@@ -2776,9 +2847,9 @@ const AdminOrderDetailsModal = ({ order, onClose, onUpdateStatus }: {
         isOpen={showCancelConfirm}
         onClose={() => setShowCancelConfirm(false)}
         onConfirm={handleCancel}
-        title="Void this Order?"
-        message="This action will permanently cancel the order. If the user paid via wallet, the amount will be refunded immediately."
-        confirmText="Confirm Void"
+        title="Cancel this Order?"
+        message="This will cancel the order. If the customer paid with wallet, they'll get a refund right away."
+        confirmText="Yes, Cancel Order"
       />
     </div>
   );
@@ -2829,9 +2900,9 @@ const AdminSettingsView = ({ addToast }: { addToast: (title: string, message: st
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 md:space-y-8 pb-32">
       <div className="flex flex-col gap-1">
         <h2 className="text-2xl md:text-3xl font-black tracking-tighter text-gray-900">
-          Master <span className="text-orange-500 italic">Settings</span>
+          App <span className="text-orange-500 italic">Settings</span>
         </h2>
-        <p className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px] tracking-[0.2em]">Global Configuration & Integrations</p>
+        <p className="text-gray-400 font-bold uppercase text-[9px] md:text-[10px] tracking-[0.2em]">Payment Setup</p>
       </div>
 
       <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
@@ -2843,8 +2914,8 @@ const AdminSettingsView = ({ addToast }: { addToast: (title: string, message: st
               <CreditCard size={20} className="md:w-6 md:h-6" />
             </div>
             <div>
-              <h3 className="font-black text-lg md:text-xl tracking-tight leading-tight">Razorpay Integration</h3>
-              <p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">Payment Gateway Credentials</p>
+              <h3 className="font-black text-lg md:text-xl tracking-tight leading-tight">Razorpay Payment Setup</h3>
+              <p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">Enter your Razorpay Keys</p>
             </div>
           </div>
 
@@ -2887,7 +2958,7 @@ const AdminSettingsView = ({ addToast }: { addToast: (title: string, message: st
             saving && "animate-pulse"
           )}
         >
-          {saving ? 'Transmitting...' : 'Apply Configurations'}
+          {saving ? 'Saving...' : 'Save Settings'}
         </button>
       </form>
     </motion.div>
