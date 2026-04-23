@@ -7,8 +7,12 @@ import { v4 as uuidv4 } from 'uuid';
 import pg from 'pg';
 const { Pool } = pg;
 
+// Strip channel_binding param which pg module doesn't support
+let dbUrl = process.env.DATABASE_URL || '';
+dbUrl = dbUrl.replace(/&?channel_binding=require/g, '').replace(/\?&/, '?');
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: dbUrl,
   ssl: { rejectUnauthorized: false }
 });
 const query = (text: string, params?: any[]) => pool.query(text, params);
@@ -140,7 +144,7 @@ app.get('/api/menu', async (_req, res) => {
   try {
     const r = await query('SELECT * FROM menu_items');
     res.json(r.rows);
-  } catch (err) { res.status(500).json({ error: 'Failed to fetch menu' }); }
+  } catch (err: any) { res.status(500).json({ error: 'Failed to fetch menu', details: err.message, dbUrl: dbUrl ? 'SET' : 'MISSING' }); }
 });
 
 app.post('/api/menu', async (req, res) => {
