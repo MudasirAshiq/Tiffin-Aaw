@@ -24,10 +24,14 @@ async function startServer() {
 
   const PORT = 3000;
 
-  // Ensure uploads directory exists
-  const uploadsDir = path.join(__dirname, 'uploads');
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
+  // Ensure uploads directory exists (use /tmp on Vercel)
+  const uploadsDir = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, 'uploads');
+  try {
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+  } catch (err) {
+    console.warn("Could not create uploads directory (likely read-only filesystem)");
   }
 
   // Set up storage for uploaded files
