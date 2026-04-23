@@ -407,7 +407,43 @@ export default function App() {
     );
   }
 
-  if (isAuthLoading) return <div className="h-screen flex items-center justify-center font-bold text-orange-500 text-2xl animate-pulse italic">Tiffin Aaw...</div>;
+  if (isAuthLoading) return (
+    <div className="h-screen flex flex-col items-center justify-center bg-gray-50 relative overflow-hidden">
+      {/* Decorative background blur */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-orange-500/10 blur-[100px] rounded-full" />
+      
+      <motion.div
+        animate={{ 
+          rotate: [0, 15, -15, 0],
+          scale: [1, 1.1, 1]
+        }}
+        transition={{ 
+          duration: 2, 
+          repeat: Infinity,
+          ease: "easeInOut" 
+        }}
+        className="w-24 h-24 bg-white rounded-[2rem] shadow-2xl shadow-orange-500/20 flex items-center justify-center text-orange-500 mb-8 border border-orange-100 relative z-10"
+      >
+        {/* Outer spinning ring */}
+        <motion.div 
+          animate={{ rotate: 360 }}
+          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+          className="absolute -inset-2 rounded-[2.5rem] border-2 border-orange-500 border-t-transparent border-l-transparent opacity-30" 
+        />
+        {/* Inner spoon and fork */}
+        <UtensilsCrossed size={44} strokeWidth={2.5} className="relative z-10 drop-shadow-sm" />
+      </motion.div>
+
+      <motion.div
+        animate={{ opacity: [0.5, 1, 0.5] }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        className="relative z-10 text-center"
+      >
+        <h1 className="text-4xl font-black tracking-tighter text-gray-900 leading-none">Tiffin<span className="text-orange-500">Aaw</span></h1>
+        <p className="text-[11px] font-bold text-orange-400/80 tracking-[0.3em] uppercase mt-2">Preparing...</p>
+      </motion.div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans selection:bg-orange-100">
