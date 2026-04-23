@@ -4,7 +4,14 @@ import session from 'express-session';
 import cookieParser from 'cookie-parser';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import { query } from '../src/lib/db';
+import pg from 'pg';
+const { Pool } = pg;
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+const query = (text: string, params?: any[]) => pool.query(text, params);
 
 const app = express();
 
